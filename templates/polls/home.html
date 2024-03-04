@@ -14,7 +14,7 @@
       {% trans 'My Poll App' %}
       {% endblock %}
     </title>
-
+    
     <!-- css -->
     <link href="{% static 'polls/css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'polls/css/bootstrap-theme.min.css' %}" rel="stylesheet">
@@ -34,6 +34,7 @@
           <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
             <span class="sr-only">Toggle navigation</span><i class="fa fa-bars"></i>
           </button>
+          
           <a class="navbar-brand" href="#page-top">My Poll App</a>
         </div>
 
@@ -119,7 +120,7 @@
 	<div class="row">
 	  <div class="col-lg-8 col-lg-offset-2 text-justify">
 	    <p>{% trans 'My Poll App is the result of my internship at the MICC in Florence as part of a web application development project under the supervision of several professors from the University of Florence and also my final thesis project for obtaining my Bachelor s degree in Computer Engineering.' %}</p>
-          <p>{% trans 'Dimitri Mbakop' %}</p></div>
+          <p><strong>{% trans 'Dimitri Mbakop ' %}</strong>  and  <strong>{% trans 'Yvan Tonga' %}</strong></p></div>
 	  </div>
 	</div>
       </div>

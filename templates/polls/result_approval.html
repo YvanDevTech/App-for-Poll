@@ -17,50 +17,52 @@
   </div>
 </div>
 
+
 <div class ="container">
 <table class ="table">
     <thead>
     <tr>
-        <th> K-max Table </th>
+        <th> Result Of Election </th>
     </tr>
     </thead>
     <tbody>
 
-    {% for x in data.approval.scores %}
-        <tr>
-    <td>
-        {% for y in x %}
-        {{ y.x }} {{ "-" }} {{ y.y }} {{ "|" }}
-        {% endfor %}
-    </td>
-        </tr>
-    {% endfor %}
+      {% for x in data.approval.scores %}
+      <tr>
+  <td>
+      {% for y in x %}
+      {{ y.x }} {{ "-" }} {{ y.y }} {{ "|" }}
+      {% endfor %}
+  </td>
+      </tr>
+  {% endfor %}
 
     </tbody>
 </table>
 </div>
+
 <div class ="container">
 <table class ="table">
-    <thead>
-    <tr>
-        <th> Winner(s) </th>
-    </tr>
-    </thead>
-    <tbody>
+  <thead>
+  <tr>
+      <th> Winner(s) </th>
+  </tr>
+  </thead>
+  <tbody>
 
-    {% for x in win3 %}
-        <tr>
-    <td>
+    {% if win3 %}
+      <tr>
+          <td>
+              {{ win3.0.x }} - {{ win3.0.y }}
+          </td>
+      </tr>
+    {% endif %}
 
-        {{ x.x }} {{ "-" }} {{ x.y }} {{ "|" }}
-
-    </td>
-        </tr>
-    {% endfor %}
-
-    </tbody>
+  </tbody>
 </table>
 </div>
+
+
 
     </form>
     <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 margin2">
@@ -73,7 +75,7 @@
         {%trans 'if you established the random choice at the time of the creation of the survey is taken in this way if it is not the case the candidates are taken according to their entry at the time of creation of the survey.' %}</strong></h5>
     </div>
     <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 margin2">
-      <a href="{% url 'results' poll.id %}" class="btn btn-custom col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "stats" %} {% trans 'Back to the results' %}</a>
+      <a href="{% url 'result' poll.id 3 %}" class="btn btn-custom col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "stats" %} {% trans 'Back to the results' %}</a>
     </div>    
   </div>
 

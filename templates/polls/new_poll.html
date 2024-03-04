@@ -16,8 +16,9 @@
         </a>
         </button>
     </div>
-    </b>
 
+
+    
     <div class="container">
     <div class="row text-center result">
 
@@ -28,6 +29,30 @@
                         <blockquote>{% trans 'Approval voting lets each voter indicate support for one or more candidates. Final tallies show how many votes each candidate received, and the winner is the candidate with the most support.' %}</blockquote>
             </span>
             </div>
+
+            <div class="col-md-4 col-sm-6 ">
+
+              <span class="caption">
+                     <h4> {% trans 'Copeland voting' %}</h4>
+                      <blockquote>{% trans '"The Copeland Method" is a social choice method that aims to determine a collective preference among a set of options. In this method, each option is compared to all other options, and the number of direct comparisons won by each option is calculated. The option with the highest total score, meaning the option that has won the most direct comparisons, is declared the winner.' %}</blockquote>
+          </span>
+          </div>
+
+          <div class="col-md-4 col-sm-6 ">
+
+            <span class="caption">
+                   <h4> {% trans 'Hare voting' %}</h4>
+                    <blockquote>{% trans 'The "Hare Method," Instant-runoff voting (IRV) or preferential voting is an electoral system that uses ranked voting. Its purpose is to elect the candidate in single-member districts with majority support even when there are more than two candidates. Instant-runoff voting most often accomplishes majority rule but does not guarantee it. Voters in IRV elections rank the candidates in order of preference. Ballots are initially counted to establish the number of votes for each candidate. If a candidate has more than half of the first-choice votes, that candidate wins' %}</blockquote>
+        </span>
+        </div>
+
+        <div class="col-md-4 col-sm-6 ">
+
+          <span class="caption">
+                 <h4> {% trans 'Schulze voting' %}</h4>
+                  <blockquote>{% trans 'The "Schulze Method," also known as the "Beatpath Method," is a ranked-choice voting system that aims to determine a collective preference among a set of options. It uses a pairwise comparison approach to evaluate the strength of preferences. In this method, a "beatpath" is created for each pair of options, which tracks the strength of the winning relationships between options. The option that can defeat all others in pairwise comparisons by the strongest margin is declared the winner. The Schulze Method is designed to identify the option that has the broadest and strongest support, making it a valuable tool in various voting and decision-making contexts.' %}</blockquote>
+      </span>
+      </div>
 
             <div class="col-md-4 col-sm-6 ">
 
@@ -51,17 +76,24 @@
 
     </div>
     </div>
+
+    <div class="col-md-14 text-center">
+      
+  </div>
+  </b>
+
     <div class="col-md-12 text-center">
-        <button type="button" class="btn">
-        <a href="{% url 'newPoll' 20 %}" >
-	    <h4 class="list-group-item-heading"><i class="fa fa-list-ul"></i> {% trans 'Experimental'%}</h4>
-	    <p class="list-group-item-text">{%  trans 'Here you can create a fake survey to try the methods ! Learning By Doing !'%}</p>
-        </a>
-        </button>
+        
         <div class="col-md-12 col-sm-6 ">
 
                 <span class="caption">
                        <h4> {% trans 'Experimental explanation' %}</h4>
+                       <button type="button" class="btn">
+                        <a href="{% url 'newPoll' 20 %}" >
+                      <h4 class="list-group-item-heading"><i class="fa fa-list-ul"></i> {% trans 'Simulation'%}</h4>
+                      <p class="list-group-item-text">{%  trans ' Create a fake survey to try the methods !'%}</p>
+                        </a>
+                        </button>
                         <blockquote>{% trans 'Here you can create a fake survey to try the methods and see how the Web app works.' %}</blockquote>
                         <blockquote>{% trans 'You can vote several times and see the results, but you are not allowed to invite people to partecipate in your survey. '  %}</blockquote>
             </span>

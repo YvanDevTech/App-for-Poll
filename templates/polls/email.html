@@ -21,14 +21,34 @@
         <p>You have been invited to by <strong>{{ poll.admin}}</strong> to participate in election, you have to rank
             the alternatives from the best to the worse for you.</p>
         <p>The method used to determinate the winner(s) is <strong>Simpson voting</strong>.</p>
+        <p>The Simpson method is a ranked voting system: the voter ranks the list of candidates in order of preference.
+            The Simpson method selects as the winner the candidate whose greatest pairwise defeat is smaller than the greatest pairwise defeat of any other candidate</p>
     {% elif poll.preference_model == "Approval" %}
         <p>You have been invited to by <strong>{{ poll.admin}}</strong> to participate in election, you have to select the alternatives
             that you approved.</p>
         <p>The method used to determinate the winner(s) is <strong>Approval voting</strong>.</p>
+        <p>Approval voting lets each voter indicate support for one or more candidates. Final tallies show how many votes each candidate received, and the winner is the candidate with the most support.</p>
+    {% elif poll.preference_model == "Ranks#4" %}
+        <p>You have been invited to by <strong>{{ poll.admin}}</strong> to participate in election, you have to select the alternatives
+            that you approved.</p>
+        <p>The method used to determinate the winner(s) is <strong>Copeland voting</strong>.</p>
+        <p>The Copeland Method is a social choice method that aims to determine a collective preference among a set of options. In this method, each option is compared to all other options, and the number of direct comparisons won by each option is calculated. The option with the highest total score, meaning the option that has won the most direct comparisons, is declared the winner.</p>
+    {% elif poll.preference_model == "Ranks#8" %}
+        <p>You have been invited to by <strong>{{ poll.admin}}</strong> to participate in election, you have to select the alternatives
+            that you approved.</p>
+        <p>The method used to determinate the winner(s) is <strong>Hare voting</strong>.</p>
+        <p>The "Hare Method," also known as the "Single Transferable Vote" (STV), is a social choice method that involves a series of voting rounds. In each round, the option with the least number of votes is eliminated, and the preferences of those who voted for the eliminated option are redistributed among the remaining options. This process continues until a specified number of options or candidates are elected.</p>
+    {% elif poll.preference_model == "Ranks#6" %}
+        <p>You have been invited to by <strong>{{ poll.admin}}</strong> to participate in election, you have to select the alternatives
+            that you approved.</p>
+        <p>The method used to determinate the winner(s) is <strong>Schulze voting</strong>.</p>
+        <p>The "Schulze Method", also known as the "Beatpath Method," is a ranked-choice voting system that aims to determine a collective preference among a set of options. It uses a pairwise comparison approach to evaluate the strength of preferences. In this method, a "beatpath" is created for each pair of options, which tracks the strength of the winning relationships between options. The option that can defeat all others in pairwise comparisons by the strongest margin is declared the winner. The Schulze Method is designed to identify the option that has the broadest and strongest support, making it a valuable tool in various voting and decision-making contexts.</p>
     {% else %}
         <p>You have been invited to by <strong>{{ poll.admin}}</strong> to participate in election, you have to rank
             the alternatives from the best to the worse for you.</p>
         <p>The method used to determinate the winner(s) is <strong>Borda voting</strong>.</p>
+        <p>The Borda count is a ranked voting system: the voter ranks the list of candidates in order of preference.
+            the lowest-ranked candidate gets 0 points, the next-lowest gets 1 point, etc., and the highest-ranked candidate gets n − 1 points, where n is the number of candidates. Once all votes have been counted, the option or candidate with the most points is the winner.</p>
     {% endif %}{% endautoescape %}
 
 

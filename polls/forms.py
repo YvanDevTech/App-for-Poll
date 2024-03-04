@@ -2,9 +2,10 @@ from django.forms import ModelForm, Form, widgets
 from polls.models_ import VotingPoll, Candidate, DateCandidate, UNDEFINED_VALUE
 from django import forms
 import re
-from django.core.validators import validate_email
+from django.core.validators import validate_email 
 from django.forms import CharField, Textarea
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 
 
 class BasePollForm(ModelForm):
@@ -126,25 +127,54 @@ class VotingForm(forms.Form):
 
 email_separator_re = re.compile(r'[,;\s]+')
 
+import csv
 
-class EmailsListField(CharField):
+class CSVFileForm(forms.Form):
+    csv_file = forms.FileField(
+        label='CSV File',
+        help_text='Select a CSV file to upload',
+        widget=forms.ClearableFileInput(attrs={'accept': '.csv'})
+    )
 
-    widget = Textarea
+    def clean_csv_file(self):
+        csv_file = self.cleaned_data.get('csv_file')
 
-    def clean(self, value):
-        super(EmailsListField, self).clean(value)
-        emails = email_separator_re.split(value)
-        emails = [email for email in emails if email ]
+        if csv_file:
+            # Vérifier que le fichier est un fichier CSV
+            if not csv_file.name.endswith('.csv'):
+                raise forms.ValidationError("Le fichier doit être au format CSV.")
 
-        for email in emails:
-           validate_email(email)
-        return emails
+            # Traiter le fichier CSV ici pour extraire les e-mails
+            emails = []
+            try:
+                decoded_file = csv_file.read().decode('utf-8').splitlines()
+                csv_reader = csv.reader(decoded_file)
+                for row in csv_reader:
+                    email = row[0].strip()
+                    if email:
+                        emails.append(email)
+            except csv.Error as e:
+                raise forms.ValidationError(f"Erreur lors du traitement du fichier CSV : {e}")
 
+            return emails
+        else:
+            raise forms.ValidationError("Veuillez sélectionner un fichier CSV.")
 
 class InviteForm(forms.Form):
-    email = EmailsListField()
+    email = forms.CharField(
+        label="Enter one or more emails (separated by commas)",
+        widget=forms.Textarea,
+        required=False
+    )
 
+
+class CandidatePreferenceForm(forms.Form):
+    preferences = forms.MultipleChoiceField(choices=[], widget=forms.CheckboxSelectMultiple)
+
+    def __init__(self, *args, **kwargs):
+        candidates = kwargs.pop('candidates', [])
+        super(CandidatePreferenceForm, self).__init__(*args, **kwargs)
+        self.fields['preferences'].choices = [(candidate, candidate) for candidate in candidates]
 
 class BallotForm(forms.Form):
     certificate =forms.CharField(max_length=16,widget=forms.TextInput(attrs={ 'placeholder': _('certificate')}))
-

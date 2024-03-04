@@ -43,16 +43,17 @@
                                         <div class=" well margin2">
 
                                             <p  class="help-block">{% trans 'Add one or more email addresses of voters.' %}</p>
-
-                                            <form action="" method="post"  >
+                                           
+                                            <form method="post" enctype="multipart/form-data" action="{% url 'invitation' poll.id %}">
                                                 {% csrf_token %}
-                                                {% bootstrap_form_errors form %}
-                                                {% bootstrap_form form show_label=False  %}
-                                                <div class="wrapper ">
-                                                <button type="submit" class="btn btn-success "> <i class="fa fa-send"></i> {% trans 'Submit' %}</button>
-                                            </div>
+                                                {{ csv_form }}
+                                                <!-- Altri campi del form... -->
+                                                <button type="submit">Carica</button>
                                             </form>
+                                            
+                                        
                                         </div>
+                                        
                                     </div>
 
                                     <div class="col-xs-12 col-sm-6">

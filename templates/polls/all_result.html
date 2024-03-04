@@ -16,14 +16,14 @@
         <!-- Page Features -->
         <div class="row text-center result">
 
-            <div class="col-md-4 col-sm-6 "><a href= "{% url 'viewResult' poll.pk 1 %}" class="thumbnail">
+            <div class="col-md-4 col-sm-6 "><a href= "{% url 'result' poll.pk 1 %}" class="thumbnail">
 
                 <!--<img src="{% static 'polls/images/scoring.png' %}" class="img-thumbnail" alt="">-->
                 <span class="caption">
-                       <h4> {% trans 'Borda method' %}</h4>
-                        <blockquote>{% trans 'borda method message' %}</blockquote>
-            </span>
-            </a>
+                    <h4> {% trans 'Borda method' %}</h4>
+                    <blockquote>{% trans 'borda method message' %}</blockquote>
+                </span>
+                </a>
             </div>
 
             <!--<div class="col-md-3 col-sm-6 " ><a href="{% url 'viewResult' poll.pk 2 %}" class="thumbnail">
@@ -36,33 +36,71 @@
             </a>
             </div>-->
 
-            <div class="col-md-4 col-sm-6 ">
-                <a href="{% url 'viewResult' poll.pk 3 %}" class="thumbnail">
+            <div class="col-md-4 col-sm-6 "><a href="{% url 'result' poll.pk 3 %}" class="thumbnail">
 
                     <!--<img src="{% static 'polls/images/runoff.png' %}" class="img-thumbnail" alt="">-->
-            <span class="caption">
-            <h4> {% trans 'Approval method' %}</h4>
-                        <blockquote>{% trans 'approval method message' %}</blockquote>
+                <span class="caption">
+                    <h4> {% trans 'Approval method' %}</h4>
+                    <blockquote>{% trans 'approval method message' %}</blockquote>
                 </span>
                 </a>
             </div>
 
-            <div class="col-md-4 col-sm-6 "><a href="{% url 'viewResult' poll.pk 4 %}" class="thumbnail" >
+            <div class="col-md-4 col-sm-6 "><a href="{% url 'result' poll.pk 4 %}" class="thumbnail" >
 
                 <!--<img src="{% static 'polls/images/randomized.png' %}" class="img-thumbnail" alt="">-->
-                    <span class="caption">
-                        <h4>{% trans 'Simpson method' %}</h4>
-                        <blockquote>{% trans 'plurality method message' %}</blockquote>
-                    </span>
-
-            </a>
+                <span class="caption">
+                    <h4>{% trans 'Simpson method' %}</h4>
+                    <blockquote>{% trans 'plurality method message' %}</blockquote>
+                </span>
+                </a>
             </div>
+
+            <div class="col-md-4 col-sm-6 "><a href="{% url 'result' poll.pk 2 %}" class="thumbnail" >
+
+                <!--<img src="{% static 'polls/images/randomized.png' %}" class="img-thumbnail" alt="">-->
+                <span class="caption">
+                    <h4>{% trans 'Copeland method' %}</h4>
+                    <blockquote>{% trans 'copeland method message' %}</blockquote>
+                </span>
+                </a>
+            </div>
+
+            <div class="col-md-4 col-sm-6 "><a href="{% url 'result' poll.pk 6 %}" class="thumbnail" >
+
+                <!--<img src="{% static 'polls/images/randomized.png' %}" class="img-thumbnail" alt="">-->
+                <span class="caption">
+                    <h4>{% trans 'Schulze method' %}</h4>
+                    <blockquote>{% trans 'schulze method message' %}</blockquote>
+                </span>
+                </a>
+            </div>
+
+            <div class="col-md-4 col-sm-6 "><a href="{% url 'result' poll.pk 8 %}" class="thumbnail" >
+
+                <!--<img src="{% static 'polls/images/randomized.png' %}" class="img-thumbnail" alt="">-->
+                <span class="caption">
+                    <h4>{% trans 'Hare method' %}</h4>
+                    <blockquote>{% trans 'Hare method message' %}</blockquote>
+                </span>
+                </a>
+            </div>
+
+
+           
+
+
+           
+
+           
+
+            
 
         </div>
 
 
 <div class="text-center">
-                <a href="{% url 'viewPoll' poll.id %}"  class="btn btn-custom  btn-lg ">{% bootstrap_icon "list" %} {% trans 'Back to the poll' %}</a>
+    <a href="{% url 'viewPoll' poll.id %}"  class="btn btn-custom  btn-lg ">{% bootstrap_icon "list" %} {% trans 'Back to the poll' %}</a>
 </div>
 
 

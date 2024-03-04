@@ -21,12 +21,10 @@
       </div>
       {% if not is_closed %}
       <div class=" col-xs-6 col-sm-6 col-md-6 col-lg-4 margin2">
-	<a href="{% url 'vote' poll.id %}"  class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "pencil" %} {% trans 'vote' %}</a>
+	    <a href="{% url 'vote' poll.id %}"  class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "pencil" %} {% trans 'vote' %}</a>
       </div>
       {% endif %}
-      <div class="col-xs-6 col-sm-6 col-md-6 col-lg-4 margin2">
-	<a href="{% url 'results' poll.id %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "stats" %} {% trans 'results' %}</a>
-      </div>
+ 
     </div>
   </div>
 </div>
@@ -94,9 +92,9 @@
         {% for v in votes %}
         <tr>
           {% if poll.ballot_type == "Experimental"%}
-	  <td class="no-controls">
+	     <td class="no-controls">
             {% elif poll.ballot_type == "Secret" %}
-	  <td class="no-controls">
+	      <td class="no-controls">
             {% else %}
             {% if v.modify %}
           <td class="controls">
@@ -157,22 +155,67 @@
     {% endif %}
   </p>
 </div>
-  <div class="row">
-    <div class="col-md-2 col-lg-2"></div>
-    <div class=" col-xs-12 col-sm-4 col-md-2 col-lg-2 margin2">
-      <a href="{% url 'vote' poll.id %}"  class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "pencil" %} {% trans 'vote' %}</a>
-    </div>
-    <div class="col-xs-12 col-sm-4 col-md-2 col-lg-2 margin2" >
-      <a href="{% url 'results' poll.id %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "stats" %} {% trans 'results' %}</a>
-    </div>
-    <div class="col-xs-12 col-sm-4 col-md-2 col-lg-2  margin2">
-      <a href="{% url 'admin' poll.id %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "cog" %} {% trans 'settings' %}</a>
-    </div>
-    <div class="col-xs-12 col-sm-4 col-md-2 col-lg-2  margin2">
-     <a href="{% url 'data' poll.id %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "download-alt" %} {% trans 'Data page' %} </a>
-    </div>
-    <div class="col-md-2 col-lg-2"></div>
+<div class="row">
+  <div class="col-md-2 col-lg-2"></div>
+  
+  <div class=" col-xs-12 col-sm-4 col-md-2 col-lg-2 margin2">
+      <a href="{% url 'vote' poll.id %}"  class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          {% bootstrap_icon "pencil" %} {% trans 'vote' %}
+      </a>
   </div>
+
+  <div class="col-xs-6 col-sm-6 col-md-6 col-lg-4 margin2">
+      <a href="{% url 'result_borda' poll.id 2 %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          {% bootstrap_icon "stats" %} {% trans 'Result Borda' %}
+      </a>
+  </div>
+
+  <div class="col-xs-6 col-sm-6 col-md-6 col-lg-4 margin2">
+    <a href="{% url 'result_approval' poll.id 1 %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        {% bootstrap_icon "stats" %} {% trans 'Approval Results' %}
+    </a>
+  </div>
+
+  <div class="col-xs-6 col-sm-6 col-md-6 col-lg-4 margin2">
+    <a href="{% url 'result_copeland' poll.id 3 %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        {% bootstrap_icon "stats" %} {% trans 'Copeland Results' %}
+    </a>
+  </div>
+
+  <div class="col-xs-6 col-sm-6 col-md-6 col-lg-4 margin2">
+    <a href="{% url 'result_simpson' poll.id 4 %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        {% bootstrap_icon "stats" %} {% trans 'Simpson Results' %}
+    </a>
+  </div>
+
+  <div class="col-xs-6 col-sm-6 col-md-6 col-lg-4 margin2">
+    <a href="{% url 'result_schulze' poll.id %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        {% bootstrap_icon "stats" %} {% trans 'Schulze Results' %}
+    </a>
+  </div>
+
+  <div class="col-xs-6 col-sm-6 col-md-6 col-lg-4 margin2">
+    <a href="{% url 'result_hare' poll.id %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        {% bootstrap_icon "stats" %} {% trans 'Hare Results' %}
+    </a>
+  </div>
+
+  <!-- Ajoutez des conditions similaires pour les autres boutons de résultats -->
+
+  <!-- ... (le reste de vos boutons de résultats) ... -->
+
+  <div class="col-xs-12 col-sm-4 col-md-2 col-lg-2  margin2">
+      <a href="{% url 'admin' poll.id %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          {% bootstrap_icon "cog" %} {% trans 'settings' %}
+      </a>
+  </div>
+  <div class="col-xs-12 col-sm-4 col-md-2 col-lg-2  margin2">
+      <a href="{% url 'data' poll.id %}" class="btn btn-custom btn-lg col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          {% bootstrap_icon "download-alt" %} {% trans 'Data page' %}
+      </a>
+  </div>
+  <div class="col-md-2 col-lg-2"></div>
 </div>
+
 
 {% endblock %}

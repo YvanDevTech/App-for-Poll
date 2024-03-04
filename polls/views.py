@@ -1,4 +1,5 @@
 import json
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
@@ -6,7 +7,7 @@ try:
     from django.core.urlresolvers import reverse_lazy, reverse
 except ImportError:
     from django.urls import reverse_lazy, reverse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.utils.translation import gettext_lazy as _
 from django.http import HttpResponse
 from django.core.mail import EmailMultiAlternatives
@@ -16,19 +17,36 @@ from django.utils.safestring import mark_safe
 from operator import itemgetter
 from datetime import datetime, date
 from random import shuffle
+import csv
+import uuid
+import os
+from django.shortcuts import render
+from django.http import HttpResponse
+from django.conf import settings
+
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
+
 
 from django.db.models import Count
 
+from django.http import Http404
+
 from accounts.models import MyPollAppUser, MyPollAppUserAnonymous, User, UserAnonymous
 from polls.forms import VotingPollForm, CandidateForm, VotingForm, DateForm, \
-    OptionForm, InviteForm, BallotForm, NickNameForm, StatusForm, PollUpdateForm
-from polls.models_ import VotingPoll, Candidate, preference_model_from_text, VotingScore, UNDEFINED_VALUE, \
-    DateCandidate
+    OptionForm, InviteForm, BallotForm, NickNameForm, StatusForm, PollUpdateForm, CSVFileForm, CandidatePreferenceForm
+from polls.models_ import VotingPoll, Candidate, User,preference_model_from_text, VotingScore,UNDEFINED_VALUE, \
+    DateCandidate, MyCandidatePreference
 
-from polls.utils import days_months, voters_undefined, scoring_method, \
-    condorcet_method, runoff_method, randomized_method, kmass, vincitori
+from polls.utils import days_months, voters_undefined, scoring_method,schulze_method, \
+    condorcet_method, runoff_method, randomized_method, calculate_voting_rounds ,kmass, vincitori, SomeSpecificException
 
 from mbakop_polls.settings import BASE_URL, EMAIL_FROM
+
+
+
+
 
 
 # decorators ###################################################################
@@ -60,6 +78,7 @@ def with_admin_rights(init_fn):
         return init_fn(request, poll, *args, **kwargs)
 
     return _wrapped
+
 
 
 def with_voter_rights(init_fn):
@@ -101,6 +120,7 @@ def with_viewing_rights(init_fn):
     specified as first argument..."""
 
     def _wrapped(request, poll, *args, **kwargs):
+        
         if poll.ballot_type == "Experimental" \
                 and (not request.user or request.user != poll.admin):
             messages.error(request, mark_safe(_("you are not the poll administrator")))
@@ -300,44 +320,138 @@ def advanced_parameters(request, poll):  ######################### PAGE 3
     return render(request, 'polls/option.html', locals())
 
 
+
 @login_required
 @with_valid_poll
 @with_admin_rights
-def invitation(request, poll):  ################################### PAGE 4
+def invitation(request, poll):
+    """Renders the very last poll creation page.
+    This page is mostly dedicated to the invitation of voters."""
+    if poll.ballot_type == "Standard":
+    # Créer une liste de votants avec leurs préférences de candidats (une seule instance)
+        all_candidates_objects = Candidate.objects.filter(poll=poll)
+        all_candidates = [candidate.candidate for candidate in all_candidates_objects]
+
+        # Créer une liste de votants avec leurs préférences de candidats (une seule instance)
+        voter_template = {
+            'preference': all_candidates
+        }
+        # Ajoutez des votants fictifs avec des préférences de candidats (ajustez selon vos besoins)
+        for num in range(1, 6):  # Par exemple, ajoutez 5 votants
+            voter = voter_template.copy()  # Créez une copie pour chaque votant
+            certi = MyPollAppUserAnonymous.id_generator()
+            voter_instance = MyPollAppUserAnonymous.objects.create(
+                nickname=MyPollAppUserAnonymous.nickname_generator(poll.id),
+                email=f'voter{num}@example.com',  # Utilisez le numéro comme identifiant
+                certificate=MyPollAppUserAnonymous.encodeAES(certi),
+                poll=poll
+            )
+
+            # Associez les préférences de candidats
+            form = CandidatePreferenceForm(candidates=voter['preference'])
+            if form.is_valid():
+                preferences = form.cleaned_data['preferences']
+                for preference in preferences:
+                    MyCandidatePreference.objects.create(
+                        voter=voter_instance,
+                        candidate_name=preference,
+                        poll=poll
+                    )
+        
+
+    update_poll = "update" in request.session and int(request.session["update"]) != 1
+    invited_voters = MyPollAppUserAnonymous.objects.filter(poll=poll.id)
+
+    if request.method == 'POST':
+        csv_form = CSVFileForm(request.POST, request.FILES)
+        invite_form = InviteForm(request.POST)
+
+        if csv_form.is_valid() or invite_form.is_valid():
+            if 'csv_file' in csv_form.cleaned_data:
+                csv_emails = csv_form.cleaned_data['csv_file']
+                for email in csv_emails:
+                    certi = MyPollAppUserAnonymous.id_generator()
+                    MyPollAppUserAnonymous.objects.create(
+                        nickname=MyPollAppUserAnonymous.nickname_generator(poll.id),
+                        email=email,
+                        certificate=MyPollAppUserAnonymous.encodeAES(certi),
+                        poll=poll
+                    )
+                    subject = '[My Poll App] Invitation to participate in election #' + str(poll.pk)
+                    htmly = get_template('polls/email.html')
+                    url = BASE_URL + reverse("vote", args=(str(poll.pk),))
+                    data = {'poll': poll, 'certi': certi, 'url': url}
+                    txt_content = (_('Email text template with url %(url)s and certificate %(certi)s.')
+                                % data)
+                    html_content = htmly.render(data)
+                    msg = EmailMultiAlternatives(subject, txt_content, EMAIL_FROM, [email])
+                    msg.attach_alternative(html_content, "text/html")
+                    msg.send()
+            else:
+                messages.error(request, mark_safe(_("No 'csv_file' in cleaned_data. Please check your input.")))
+            messages.success(request, mark_safe(_('Invited voters successfully added!')))
+            return redirect(reverse_lazy("invitation", args=(poll.id,)))
+        else:
+            messages.error(request, mark_safe(_("Form is not valid. Please check your input.")))
+            
+    else:
+        csv_form = CSVFileForm()
+        invite_form = InviteForm()
+
+    return render(request, 'polls/invite.html', {
+        'update_poll': update_poll,
+        'invited_voters': invited_voters,
+        'csv_form': csv_form,
+        'invite_form': invite_form,
+        'poll': poll
+    })
+
+@login_required
+@with_valid_poll
+@with_admin_rights
+def upload_file(request, poll):  ################################### PAGE 4
     """Renders the very last poll creation page.
     This page is mostly dedicated to the invitation of voters."""
     if poll.ballot_type == "Standard":
         messages.warning(request, mark_safe(_('You can\'t invite people to participate in a fake survey!')))
     update_poll = "update" in request.session and int(request.session["update"]) != 1
     invited_voters = MyPollAppUserAnonymous.objects.filter(poll=poll.id)
+    linecount = 0
     if request.method == 'POST':
         form = InviteForm(request.POST)
         if poll.ballot_type == "Standard":
             messages.error(request, mark_safe(_('You can\'t invite people to participate in a fake survey!')))
             return redirect(reverse_lazy(view_poll, args=(poll.id,)))
         if form.is_valid():
-            for email in form.cleaned_data['email']:
-                certi = MyPollAppUserAnonymous.id_generator()
-                MyPollAppUserAnonymous.objects.create(
-                    nickname=MyPollAppUserAnonymous.nickname_generator(poll.id),
-                    email=email,
-                    certificate=MyPollAppUserAnonymous.encodeAES(certi),
-                    poll=poll
-                )
-                subject = '[My Poll App] Invitation to participate in election #' + str(poll.pk)
-                htmly = get_template('polls/email.html')
-                url = BASE_URL + reverse("vote", args=(str(poll.pk),))
-                data = {'poll': poll, 'certi': certi, 'url': url}
-                txt_content = (
-                                  _('Email text template with url %(url)s and certificate %(certi)s.')
-                              ) % data
-                html_content = htmly.render(data)
-                msg = EmailMultiAlternatives(subject, txt_content, EMAIL_FROM, [email])
-                msg.attach_alternative(html_content, "text/html")
-                msg.send()
+            csv_file = "C:\\Users\\39351\\tesi\\filetest.csv"
+            with open(csv_file) as file:
+                for row in file:
+                    if ( linecount > 1 ) :
+                        x = row.split(";")
+                        email = x[0]
+                        for email in form.cleaned_data['email']:
+                            certi = MyPollAppUserAnonymous.id_generator()
+                            MyPollAppUserAnonymous.objects.create(
+                                nickname=MyPollAppUserAnonymous.nickname_generator(poll.id),
+                                email=email,
+                                certificate=MyPollAppUserAnonymous.encodeAES(certi),
+                                poll=poll
+                            )
+                            subject = '[My Poll App] Invitation to participate in election #' + str(poll.pk)
+                            htmly = get_template('polls/email.html')
+                            url = BASE_URL + reverse("vote", args=(str(poll.pk),))
+                            data = {'poll': poll, 'certi': certi, 'url': url}
+                            txt_content = (
+                                            _('Email text template with url %(url)s and certificate %(certi)s.')
+                                        ) % data
+                            html_content = htmly.render(data)
+                            msg = EmailMultiAlternatives(subject, txt_content, EMAIL_FROM, [email])
+                            msg.attach_alternative(html_content, "text/html")
+                            msg.send()
+                    linecount += 1
 
-            messages.success(request, mark_safe(_('Invited voters successfully added!')))
-            return redirect(reverse_lazy(invitation, args=(poll.id,)))
+                    messages.success(request, mark_safe(_('Invited voters successfully added!')))
+                    return redirect(reverse_lazy(invitation, args=(poll.id,)))
     else:
         form = InviteForm()
         return render(request, 'polls/invite.html', {
@@ -346,7 +460,6 @@ def invitation(request, poll):  ################################### PAGE 4
             'form': form,
             'poll': poll
         })
-
 
 # Candidate management (PAGE 2) ################################################
 
@@ -530,7 +643,7 @@ def certificate(request, poll):
         if form.is_valid():
             certificate = MyPollAppUserAnonymous.encodeAES(form.cleaned_data['certificate'])
             try:
-                user = MyPollAppUserAnonymous.objects.get(poll=poll.id, certificate=certificate)
+                user = MyPollAppUserAnonymous.objects.get(poll__id=poll.id, certificate=certificate)
                 messages.success(request, mark_safe(_('your certificate is correct ')))
                 request.session["user"] = str(user.id)
                 if next_url is not None:
@@ -558,6 +671,26 @@ def vote(request, poll):
     - the originating HTTP request
     - the poll concerned
     - the voter concerned"""
+
+    voter = None
+    if poll.ballot_type == "Standard":
+        max_votes = 5
+
+        # Check if the user has already voted the maximum number of times
+        if request.user.is_authenticated:
+            voter = request.user
+        else:
+            # Vous devrez ajuster la logique en fonction de votre modèle User
+            # Par exemple, vous pouvez utiliser get_or_create pour créer un nouvel utilisateur
+            voter, created = MyPollAppUserAnonymous.objects.get_or_create(id=request.session.get("user"))
+
+        # Check if the user has already voted the maximum number of times
+        user_votes_count = VotingScore.objects.filter(candidate__poll__id=poll.id, voter=voter.id).count()
+        if user_votes_count >= max_votes:
+            messages.error(request, mark_safe(_('You have reached the maximum number of votes.')))
+            return redirect(reverse_lazy(view_poll, args=(poll.id,)))
+
+
 
     if poll.is_closed():
         messages.error(request, mark_safe(_('poll closed, you cannot vote anymore')))
@@ -646,7 +779,6 @@ def vote(request, poll):
         'days': days,
         'months': months
     })
-
 
 @with_valid_poll
 @certificate_required
@@ -856,21 +988,44 @@ def _view_poll_as_preflib(poll):
 
 @with_valid_poll
 @with_viewing_rights
-def result_all(request, poll):
-    if poll.preference_model == "Approval":
-        model = "Approval voting"
-    elif poll.preference_model == "Ranks#0":
-        model = "Simpson voting"
+def result_borda_view(request, poll, method):
+    # Logique spécifique pour la méthode Borda
+    candidates = DateCandidate.objects.filter(poll_id=poll.id) if poll.poll_type == 'Date' \
+        else Candidate.objects.filter(poll_id=poll.id)
+    votes = VotingScore.objects.filter(candidate__poll__id=poll.id) \
+        .values('voter__id', 'candidate__id', 'value') \
+        .order_by('last_modification', 'candidate')
+    voters = VotingScore.objects.values_list('voter__id', flat=True) \
+        .filter(candidate__poll__id=poll.id) \
+        .order_by('last_modification', 'candidate')
+    list_voters = list(set(voters))
+    method = int(method)
+    scores = {}
+
+    for v in list_voters:
+        scores[str(v)] = {}
+
+    for v in votes:
+        scores[str(v["voter__id"])][str(v["candidate__id"])] = v["value"]
+
+    
+    url_poll = str(reverse_lazy(result_scores, args=(poll.id, method)))
+
+    preference_model = preference_model_from_text(poll.preference_model, len(candidates))
+
+    data = scoring_method(candidates, preference_model, votes, list_voters, scores)
+    win1 = vincitori(data["borda"], poll.winner_poll, poll.option_shuffle)
+    
+    if poll.preference_model == 'Ranks#2':
+        return render(request, 'polls/result_borda.html', locals())
     else:
-        model = "Borda voting"
-    messages.info(request, mark_safe("Please, Be careful to select the right Preference Model. \n "
-                                     "The preference model for the poll selected is : " + str(model)))
-    return render(request, 'polls/all_result.html', locals())
+        messages.error(request, mark_safe(_('This result view borda is not valid for the preference model chosen !')))
+        # Ajoutez un comportement par défaut si nécessaire
 
 
 @with_valid_poll
 @with_viewing_rights
-def result_view(request, poll, method):
+def result_approval_view(request, poll, method):
     candidates = DateCandidate.objects.filter(poll_id=poll.id) if poll.poll_type == 'Date' \
         else Candidate.objects.filter(poll_id=poll.id)
     votes = VotingScore.objects.filter(candidate__poll__id=poll.id) \
@@ -910,29 +1065,217 @@ def result_view(request, poll, method):
     win3 = vincitori(data["approval"]["scores"], poll.winner_poll, poll.option_shuffle)
     win4 = vincitori(data3["simpson"]["nodes"], poll.winner_poll, poll.option_shuffle)
 
-    if method == 1:
-        if poll.preference_model == 'Ranks#2':
-            return render(request, 'polls/result_borda.html', locals())
-        else:
-            messages.error(request, mark_safe(_('This result view is not valid for the preference model chosen !')))
-            return redirect(reverse_lazy(result_all, args=(poll.id,)))
+        
+    if poll.preference_model == 'Approval':
+        return render(request, 'polls/result_approval.html', locals())
+    else:
+        messages.error(request, mark_safe(_('This result view approval is not valid for the preference model chosen !')))
+        
 
-    if method == 3:
-        if poll.preference_model == 'Approval':
-            return render(request, 'polls/result_approval.html', locals())
-        else:
-            messages.error(request, mark_safe(_('This result view is not valid for the preference model chosen !')))
-            return redirect(reverse_lazy(result_all, args=(poll.id,)))
+@with_valid_poll
+@with_viewing_rights
+def result_simpson_view(request, poll, method):
+    # Logique spécifique pour la méthode Borda
+    candidates = DateCandidate.objects.filter(poll_id=poll.id) if poll.poll_type == 'Date' \
+        else Candidate.objects.filter(poll_id=poll.id)
+    votes = VotingScore.objects.filter(candidate__poll__id=poll.id) \
+        .values('voter__id', 'candidate__id', 'value') \
+        .order_by('last_modification', 'candidate')
+    voters = VotingScore.objects.values_list('voter__id', flat=True) \
+        .filter(candidate__poll__id=poll.id) \
+        .order_by('last_modification', 'candidate')
+    list_voters = list(set(voters))
+    method = int(method)
+    scores = {}
 
-    if method == 4:
-        if poll.preference_model == "Ranks#0":
-            return render(request, 'polls/result_simpson.html', locals())
-        else:
-            messages.error(request, mark_safe(_('This result view is not valid for the preference model chosen !')))
-            return redirect(reverse_lazy(result_all, args=(poll.id,)))
-    if method == 2:
-        pass
+    for v in list_voters:
+        scores[str(v)] = {}
 
+    for v in votes:
+        scores[str(v["voter__id"])][str(v["candidate__id"])] = v["value"]
+
+    
+    url_poll = str(reverse_lazy(result_scores, args=(poll.id, method)))
+
+    preference_model = preference_model_from_text(poll.preference_model, len(candidates))
+
+    data3 = condorcet_method(list_voters, candidates, scores)
+    win4 = vincitori(data3["simpson"]["nodes"], poll.winner_poll, poll.option_shuffle)
+    
+    if poll.preference_model == 'Ranks#0':
+        return render(request, 'polls/result_simpson.html', locals())
+    else:
+        messages.error(request, mark_safe(_('This result view simpson is not valid for the preference model chosen !')))
+        # Ajoutez un comportement par défaut si nécessaire
+
+@with_valid_poll
+@with_viewing_rights
+def result_copeland_view(request, poll, method):
+    # Logique spécifique pour la méthode Borda
+    candidates = DateCandidate.objects.filter(poll_id=poll.id) if poll.poll_type == 'Date' \
+        else Candidate.objects.filter(poll_id=poll.id)
+    votes = VotingScore.objects.filter(candidate__poll__id=poll.id) \
+        .values('voter__id', 'candidate__id', 'value') \
+        .order_by('last_modification', 'candidate')
+    voters = VotingScore.objects.values_list('voter__id', flat=True) \
+        .filter(candidate__poll__id=poll.id) \
+        .order_by('last_modification', 'candidate')
+    list_voters = list(set(voters))
+    method = int(method)
+    scores = {}
+
+    for v in list_voters:
+        scores[str(v)] = {}
+
+    for v in votes:
+        scores[str(v["voter__id"])][str(v["candidate__id"])] = v["value"]
+
+    
+    url_poll = str(reverse_lazy(result_scores, args=(poll.id, method)))
+
+    preference_model = preference_model_from_text(poll.preference_model, len(candidates))
+
+    data2 = runoff_method(candidates, list_voters, scores)
+    data = scoring_method(candidates, preference_model, votes, list_voters, scores)
+    data3 = condorcet_method(list_voters, candidates, scores)
+    win1 = vincitori(data["borda"], poll.winner_poll, poll.option_shuffle)
+    win3 = vincitori(data["approval"]["scores"], poll.winner_poll, poll.option_shuffle)
+    win4 = vincitori(data3["simpson"]["nodes"], poll.winner_poll, poll.option_shuffle)
+    
+    if poll.preference_model == 'Ranks#4':
+        return render(request, 'polls/result_copeland.html', locals())
+    else:
+        messages.error(request, mark_safe(_('This result view copeland is not valid for the preference model chosen !')))
+        # Ajoutez un comportement par défaut si nécessaire
+
+
+@with_valid_poll
+@with_viewing_rights
+def result_schulze_view(request, poll):
+    # Récupérer les candidats
+    if poll.poll_type == 'Date':
+        candidates = DateCandidate.objects.filter(poll_id=poll.id)
+    else:
+        candidates = Candidate.objects.filter(poll_id=poll.id)
+
+    # Récupérer les scores de vote
+    votes_scores = VotingScore.objects.filter(candidate__poll=poll).values('voter_id', 'candidate_id', 'value')
+
+    # Construire les préférences pour chaque votant
+    preferences = {}
+    for vote_score in votes_scores:
+        voter_id = vote_score['voter_id']
+        candidate_id = vote_score['candidate_id']
+        vote_value = vote_score['value']
+
+        if voter_id not in preferences:
+            preferences[voter_id] = {}
+
+        preferences[voter_id][candidate_id] = vote_value
+
+    # Convertir les préférences en une liste de listes triée pour chaque votant
+    sorted_preferences = []
+    for voter_prefs in preferences.values():
+        sorted_prefs = sorted(voter_prefs.items(), key=lambda x: x[1], reverse=True)
+        sorted_preferences.append([candidate_id for candidate_id, _ in sorted_prefs])
+
+    # Appeler la méthode Schulze
+    winner, strongest_paths = schulze_method(sorted_preferences, candidates)
+
+    # Préparer l'URL pour les résultats
+    url_poll = reverse_lazy('result_scores', args=(poll.id,))
+
+    # Vérifier le modèle de préférence et afficher la vue appropriée
+    if poll.preference_model == 'Ranks#6':  # Code pour Schulze
+        context = {
+            'poll': poll,
+            'winner': winner,
+            'candidates': candidates,
+            'strongest_paths': strongest_paths,
+            'url_poll': url_poll,
+        }
+        return render(request, 'polls/result_schulze.html', context)
+    else:
+        messages.error(request, _('This result view is not valid for the preference model chosen!'))
+        return render(request, 'polls/error.html')
+
+
+@with_valid_poll
+@with_viewing_rights
+def result_hare_view(request, poll):
+    
+    # Logique spécifique pour la méthode Borda
+    candidates = DateCandidate.objects.filter(poll_id=poll.id) if poll.poll_type == 'Date' \
+        else Candidate.objects.filter(poll_id=poll.id)
+    votes = VotingScore.objects.filter(candidate__poll__id=poll.id) \
+        .values('voter__id', 'candidate__id', 'value') \
+        .order_by('last_modification', 'candidate')
+    voters = VotingScore.objects.values_list('voter__id', flat=True) \
+        .filter(candidate__poll__id=poll.id) \
+        .order_by('last_modification', 'candidate')
+    list_voters = list(set(voters))
+    candidates = list(poll.candidates.all())
+    
+    # Supposons que vous ayez une manière de récupérer les votes comme listes de préférences
+    voter_preferences = {}
+    for vote in VotingScore.objects.filter(candidate__poll=poll).select_related('candidate', 'voter'):
+        if vote.voter.id not in voter_preferences:
+            voter_preferences[vote.voter.id] = []
+        voter_preferences[vote.voter.id].append((vote.candidate.id, vote.value))
+
+    # Tri des préférences pour chaque votant basé sur le score ou le rang
+    votes = []
+    for voter_id, preferences in voter_preferences.items():
+        sorted_preferences = sorted(preferences, key=lambda x: x[1])
+        votes.append([candidate_id for candidate_id, _ in sorted_preferences])
+        
+    winner, elimination_rounds = calculate_voting_rounds(candidates, votes)
+
+    reversed_rounds = []
+    total_rounds = len(elimination_rounds)
+
+    # Création des nouveaux rounds avec des données inversées
+    for i, round in enumerate(elimination_rounds):
+        new_round = {
+            'to_be_eliminated_next_round': elimination_rounds[total_rounds - 1 - i].get('to_be_eliminated_next_round', []),
+            'eliminated_candidates': elimination_rounds[total_rounds - 1 - i].get('eliminated_candidates', []),
+            # Ajoutez ici d'autres champs si nécessaire
+        }
+        reversed_rounds.append(new_round)
+
+    
+    
+    return render(request, 'polls/result_hare.html', {
+        'poll': poll,
+        'winner': winner,
+        'elimination_rounds':  reversed_rounds,
+    })
+
+
+
+method_views = {
+    1: result_borda_view,
+    3: result_approval_view,
+    4: result_simpson_view,
+    2: result_copeland_view,
+    6: result_schulze_view,
+    8: result_hare_view
+    
+    # Ajoutez les autres méthodes de calcul des résultats
+}
+
+
+def result_view(request, poll, method):
+    method = int(method)
+
+    if method in method_views:
+        # Appelle la méthode de vue correspondante
+        result = method_views[method](request, poll, method)
+        messages.success(request, f'Method {method} called successfully.')
+        return result
+    else:
+        messages.error(request, mark_safe(_('Invalid method specified!')))
+        # Ajoutez un comportement par défaut si nécessaire
 
 
 @with_valid_poll
@@ -969,9 +1312,6 @@ def result_scores(request, poll, method):
 
     return HttpResponse(json.dumps(data, indent=4, sort_keys=True), content_type="application/json")
 
-
 @with_valid_poll
 def data_page(request, poll):
     return render(request, 'polls/data.html', locals())
-
-

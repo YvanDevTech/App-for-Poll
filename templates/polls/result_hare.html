@@ -1,0 +1,66 @@
+{% extends "polls/base-view.html" %}
+{% load i18n %}
+{% load static %}
+{% load bootstrap3 %}
+
+{% block content %}
+<div class="container">
+  <h4>Survey Results: {{ poll.title }}</h4>
+  
+  {% if winner %}
+  <div class="alert alert-success" role="alert">
+    <h4>WINNER</h4>
+    <p>{{ winner.candidate }}</p>
+  </div>
+  {% else %}
+  <div class="alert alert-warning" role="alert">
+    Aucun gagnant n'a pu être déterminé.
+  </div>
+  {% endif %}
+  
+  <hr>
+  
+  <h4>Elimination Round Details</h4>
+  
+  {% for round in elimination_rounds %}
+    <div>
+      <h3><strong>Round {{ forloop.counter }}</strong></h3>
+      <p>Eliminated Candidates:</p>
+      {% if round.to_be_eliminated_next_round %}
+      
+        {% for candidate_name in round.to_be_eliminated_next_round %}
+          <strong>{{ candidate_name }}</strong>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      </p>
+      {% endif %}
+     
+        {% for candidate_name in round.eliminated_candidates %}
+          <strong>{{ candidate_name }}</strong>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      </p>
+    </div>
+  {% endfor %}
+
+</div>
+
+<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 margin2">
+  <a data-toggle="collapse" href="#explanation" class="btn btn-custom col-xs-12 col-sm-12 col-md-12 col-lg-12" >
+    {% bootstrap_icon "info-sign" %} {% trans 'More about this result display' %} {{ title }}
+  </a>
+</div>
+
+<div class="collapse col-xs-12 col-sm-12 col-md-12 col-lg-12" id="explanation">
+  <h5 style="font-size:1vw">
+    <strong>{% trans 'At the time of voting, the ID you assign to each candidate represents the size or willingness to choose that candidate. Example 2.A, 6.B, 1.C in this case the priority is B>A>C.' %}
+      {% trans 'In each round, we eliminate the candidates with the lowest score until the winner is obtained.' %}
+    </strong>
+  </h5>
+  <h5 style="font-size:1vw">
+    <strong>{% trans 'The winners are chosen according to the number established at the moment of creation of the survey, and are chosen starting from the first row if there are two or more candidates in the same row and that we have to choose fewer than there are:' %}
+      {% trans 'if you established the random choice at the time of the creation of the survey is taken in this way if it is not the case the candidates are taken according to their entry at the time of creation of the survey.' %}
+    </strong>
+  </h5>
+</div>
+</div>
+{% endblock %}
+

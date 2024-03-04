@@ -21,7 +21,7 @@ var strokewidth_palettes_line = {
 
 function scoring_plot(scoring) {
 
-    d3.select("#controlApproval").style("visibility","hidden");
+    d3.select("#controlApproval").style("visibility","visible");
     var option = d3.select("#option").node().value,
         data;
     switch (option) {
@@ -29,6 +29,9 @@ function scoring_plot(scoring) {
             data = scoring.borda;
             bar_chart(data);
             break;
+        case 'schulze':
+            data = scoring.schulze;
+            bar_chart(data)
         case 'plurality':
             data = scoring.plurality;
             bar_chart(data);

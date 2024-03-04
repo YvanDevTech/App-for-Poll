@@ -6,6 +6,7 @@ var preference=d3.select("#preference").property("value");
 d3.select("#controlApproval").style("visibility","hidden");
 d3.select("#controlCondorcet").style("visibility","hidden");
 d3.select("#Shuffle_randomized").style("visibility","hidden");
+d3.select("#controlSchulze").style("visibility","hidden")
 
 
 function drawGraph() {
@@ -41,7 +42,12 @@ function updateGraph(data) {
         break;
     case 4:
         randomized(data.randomized);
+        break;
+    case 5:
+        display_schulze(data);
+    
     }
+   
 }
 
 drawGraph();

@@ -10,7 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import os
+
 from pathlib import Path
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 import mbakop_polls.secret_settings
@@ -22,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = mbakop_polls.secret_settings.SECRET_KEY
+SECRET_KEY = 'dimitriromaric16'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -76,12 +79,36 @@ TEMPLATES = [
     },
 ]
 
+# Percorso in cui verranno salvati i file caricati
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# URL pubblico per accedere ai file caricati
+MEDIA_URL = '/media/'
+
+# ...
+
+# Configurazione del backend di archiviazione dei file (utilizziamo il backend predefinito)
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+
 
 WSGI_APPLICATION = 'mbakop_polls.wsgi.application'
 # Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+# https://docs.djangoproject.com/en/4.1/ref/settis
+# settings.py
 
-DATABASES = mbakop_polls.secret_settings.DATABASES
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'USER': '',  # Nom d'utilisateur (si applicable)
+        'PASSWORD': '',  # Mot de passe (si applicable)
+        'HOST': '',  # Hôte de la base de données (si applicable)
+        'PORT': '',  # Port de la base de données (si applicable)
+    }
+}
+
+
 
 
 # Password validation

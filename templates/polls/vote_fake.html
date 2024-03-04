@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Fake Poll: Vote for Fictitious Voters</h2>
+  {% for voter in fictitious_voters %}
+    <form method="post" action="{% url 'update_vote' poll.id voter.voter_instance.id %}">
+      {% csrf_token %}
+      {{ voter.form.as_p }}
+      <input type="submit" value="Submit Vote">
+    </form>
+  {% endfor %}
+{% endblock %}

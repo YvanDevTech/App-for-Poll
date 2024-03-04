@@ -21,47 +21,46 @@
 <table class ="table">
     <thead>
     <tr>
-        <th> K-max Table </th>
+        <th> Result Of Election </th>
     </tr>
     </thead>
     <tbody>
 
-    {% for x in data.borda %}
-        <tr>
-    <td>
+      {% for x in data.borda %}
+      <tr>
+  <td>
 
-        {% for y in x %}
-        {{ y.x }} {{ "-" }} {{ y.y }} {{ "|" }}
-        {% endfor %}
-    </td>
-        </tr>
-    {% endfor %}
+      {% for y in x %}
+      {{ y.x }} {{ "-" }} {{ y.y }} {{ "|" }}
+      {% endfor %}
+  </td>
+      </tr>
+  {% endfor %}
 
     </tbody>
 </table>
 </div>
+
 <div class ="container">
-<table class ="table">
-    <thead>
-    <tr>
-        <th> Winner(s) </th>
-    </tr>
-    </thead>
-    <tbody>
-
-    {% for x in win1 %}
-        <tr>
-    <td>
-
-        {{ x.x }} {{ "-" }} {{ x.y }} {{ "|" }}
-
-    </td>
-        </tr>
-    {% endfor %}
-
-    </tbody>
-</table>
-</div>
+  <table class ="table">
+      <thead>
+      <tr>
+          <th> Winner(s) </th>
+      </tr>
+      </thead>
+      <tbody>
+  
+        {% if win1 %}
+          <tr>
+              <td>
+                  {{ win1.0.x }} - {{ win1.0.y }}
+              </td>
+          </tr>
+        {% endif %}
+  
+      </tbody>
+  </table>
+  </div>
 
     </form>
     <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 margin2">
@@ -74,7 +73,7 @@
         {%trans 'if you established the random choice at the time of the creation of the survey is taken in this way if it is not the case the candidates are taken according to their entry at the time of creation of the survey.' %}</strong></h5>
     </div>
     <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 margin2">
-      <a href="{% url 'results' poll.id %}" class="btn btn-custom col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "stats" %} {% trans 'Back to the results' %}</a>
+      <a href="{% url 'result' poll.id 1 %}" class="btn btn-custom col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "stats" %} {% trans 'Back to the results' %}</a>
     </div>    
   </div>
 

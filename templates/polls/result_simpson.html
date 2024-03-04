@@ -17,15 +17,16 @@
   </div>
 </div>
 
+
 <div class ="container">
-<table class ="table">
+  <table class ="table">
     <thead>
     <tr>
-        <th> K-max Table </th>
+        <th> Result Of Election </th>
     </tr>
     </thead>
     <tbody>
- {% for x in data3.simpson.nodes %}
+    {% for x in data3.simpson.nodes %}
         <tr>
     <td>
 
@@ -37,28 +38,28 @@
     {% endfor %}
     </tbody>
 </table>
-<div class ="container">
-<table class ="table">
-    <thead>
-    <tr>
-        <th> Winner(s) </th>
-    </tr>
-    </thead>
-    <tbody>
-
-    {% for x in win4 %}
-        <tr>
-    <td>
-
-        {{ x.x }} {{ "-" }} {{ x.y }} {{ "|" }}
-
-    </td>
-        </tr>
-    {% endfor %}
-
-    </tbody>
-</table>
 </div>
+
+<div class ="container">
+  <table class ="table">
+      <thead>
+        <tr>
+          <th> Winner(s) </th>
+        </tr>
+      </thead>
+      <tbody>
+  
+        {% if win4 %}
+        <tr>
+            <td>
+                {{ win4.0.x }} - {{ win4.0.y }}
+            </td>
+        </tr>
+    {% endif %}
+  
+      </tbody>
+  </table>
+  </div>
 
 
     <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 margin2">
@@ -70,8 +71,6 @@
        <h5 style="font-size:1vw"><strong>{% trans 'The winners are chosen according to the number established at the moment of creation of the survey, and are chosen starting from the first row if there are two or more candidates in the same row and that we have to choose fewer than there are:'%}
         {%trans 'if you established the random choice at the time of the creation of the survey is taken in this way if it is not the case the candidates are taken according to their entry at the time of creation of the survey.' %}</strong></h5>
     </div>
-    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 margin2">
-      <a href="{% url 'results' poll.id %}" class="btn btn-custom col-xs-12 col-sm-12 col-md-12 col-lg-12">{% bootstrap_icon "stats" %} {% trans 'Back to the results' %}</a>
-    </div>    
+      
 
 {% endblock %}

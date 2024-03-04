@@ -1,0 +1,69 @@
+{% extends "polls/base-view.html" %}
+{% load i18n %}
+{% load static %}
+{% load bootstrap3 %}
+
+{% block static-extra %}
+<div class="container mt-3">
+    <h4 class="text-center">{% trans "Poll Results" %}: {{ poll.title }}</h4>
+    {% if poll.description %}
+        <p class="text-center">{{ poll.description }}</p>
+    {% endif %}
+    <hr>
+
+    <!-- Affichage du ou des gagnants -->
+    <div class="mt-4">
+        <h3>{% trans "Winner(s)" %}</h3>
+        {% if winner %}
+            <p>{{ winner }}</p>
+        {% else %}
+            <p>{% trans "No clear winner was determined." %}</p>
+        {% endif %}
+    </div>
+
+    <!-- Affichage des chemins les plus forts -->
+    <div class="mt-4">
+        <h3>{% trans "Strongest Paths" %}</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>{% trans "Candidate" %}</th>
+                    <th>{% trans "Strongest Path Score" %}</th>
+                </tr>
+            </thead>
+            
+            <tbody>
+                {% for path in strongest_paths %}
+                    <tr>
+                        <td>{{ path.0}}</td>
+                        <td>{{ path.1}}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Lien pour revenir aux détails du sondage -->
+    
+
+    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 margin2">
+      <a data-toggle="collapse" href="#explanation" class="btn btn-custom col-xs-12 col-sm-12 col-md-12 col-lg-12" >
+        {% bootstrap_icon "info-sign" %} {% trans 'More about this result display' %} {{ title }}
+      </a>
+    </div>
+  
+    <div class="collapse col-xs-12 col-sm-12 col-md-12 col-lg-12" id="explanation">
+      <h5 style="font-size:1vw">
+        <strong>{% trans 'the table of k-maximums is a table that sorts the candidates according to the score they have obtained.' %}
+          {% trans 'In the first row the candidates with the highest scores, in the second row the candidates with the second highest scores and so on up to the last row with the candidates with the lowest scores.' %}
+        </strong>
+      </h5>
+      <h5 style="font-size:1vw">
+        <strong>{% trans 'The winners are chosen according to the number established at the moment of creation of the survey, and are chosen starting from the first row if there are two or more candidates in the same row and that we have to choose fewer than there are:' %}
+          {%trans 'if you established the random choice at the time of the creation of the survey is taken in this way if it is not the case the candidates are taken according to their entry at the time of creation of the survey.' %}
+        </strong>
+      </h5>
+    </div>
+</div>
+{% endblock %}
+

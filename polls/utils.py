@@ -13,6 +13,9 @@ from accounts.models import User
 
 # simple functions ######################################################################
 
+class SomeSpecificException(Exception):
+    pass
+
 
 def days_months(candidates):
     months = []
@@ -75,12 +78,14 @@ def scoring_method(candidates,preference_model,votes,list_voters,scores):
     pl = plurality_method(order_votes, dict_cand1)
     plurality = kmass2(pl)
     dict_cand = dict_candidates(candidates)
-    veto = veto_method(order_votes, dict_cand)
+    schulze = schulze_metho(order_votes, dict_cand)
     scores = {}
     for c in candidates:
         scores[c.id] = []
     for v in votes:
         scores[v["candidate__id"]].append(v["value"])
+   
+    
 
     approval = dict()
 
@@ -113,8 +118,13 @@ def scoring_method(candidates,preference_model,votes,list_voters,scores):
     curve_approval.reverse()
     approval["scores"] = approval_scores
 
-    return{"borda":borda_scores,"plurality":plurality,"veto":veto,"approval":approval,"curve_approval":curve_approval}
+    return{"borda":borda_scores,"plurality":plurality,"schulze":schulze,"approval":approval,"curve_approval":curve_approval}
 
+def kmax_of_hare(voti, num_seggi):
+    num_seggi = 3
+    Q_h = voti / num_seggi
+    kmax = int(Q_h)
+    return kmax
 
 def order_votes_matrix(list_voters, scores):
     order_votes = []
@@ -146,7 +156,25 @@ def plurality_method(order_votes, dict_cand):
     return list(dict_cand.values())
 
 
-def veto_method(order_votes, dict_cand):
+def kmax_schulze_method(voti):
+    num_candidati = len(voti)
+    
+    # Inizializza la matrice delle preferenze pairwise
+    preferenze_pairwise = [[0] * num_candidati for _ in range(num_candidati)]
+    
+    # Calcola la matrice delle preferenze pairwise
+    for i in range(num_candidati):
+        for j in range(i + 1, num_candidati):
+            preferenze_pairwise[i][j] = voti[i][j]
+    
+    # Calcola il Quoziente di Schulze per ciascun candidato
+    K_massimi = [max(preferenze_pairwise[i]) for i in range(num_candidati)]
+    
+    return K_massimi
+
+
+
+def schulze_metho(order_votes, dict_cand):
     for v in order_votes:
         if len(v) > 1:
             if v[-1]["value"] != v[-2]["value"]:
@@ -371,7 +399,7 @@ def runoff_method(candidates,list_voters,scores):
     trm_list = sorted(trm[0], key=itemgetter('letter'))
 
 
-    return {"stv":stv,"stv_list": stv_list,"trm_list":trm_list,"trm":trm}
+    return {"stv":stv,"stv_list": stv_list,"trm_list":trm_list,"trm":trm, "hare":stv}
 
 ################# K MASS #######
 
@@ -451,6 +479,7 @@ def vincitori(my_list, c: int = 1, shuffle: bool = False):
 
     return vinc_
 
+
 def counting2(arr, count):
     c = 0
     for _ in range(len(arr)):
@@ -472,3 +501,103 @@ def kmass2(arr):
             c = counting(arr, arr[0]["y"])
     print(km)
     return km
+
+
+
+######## SCHULZE ########
+
+# Ajouter dans utils.py
+
+def schulze_method(votes, candidates):
+    # Initialiser la matrice des préférences
+    pref_matrix = {candidate.id: {candidate.id: 0 for candidate in candidates} for candidate in candidates}
+    
+    # Remplir la matrice avec les préférences des votants
+    for vote in votes:
+        for i in range(len(vote)):  # Assuming vote is a list of candidate IDs in preference order
+            for j in range(i+1, len(vote)):
+                pref_matrix[vote[i]][vote[j]] += 1
+
+    
+    # Calculer le chemin le plus fort entre toutes les paires de candidats
+    for i in candidates:
+        for j in candidates:
+            if i.id != j.id:
+                for k in candidates:
+                    if i.id != k.id and j.id != k.id:
+                        pref_matrix[j.id][k.id] = max(pref_matrix[j.id][k.id], min(pref_matrix[j.id][i.id], pref_matrix[i.id][k.id]))
+    
+    # Déterminer le gagnant
+    winner = None
+    strongest_paths = []
+    for i in candidates:
+        is_winner = True
+        for j in candidates:
+            if i.id != j.id:
+                if pref_matrix[j.id][i.id] > pref_matrix[i.id][j.id]:
+                    is_winner = False
+                    break
+        if is_winner:
+            winner = i
+            break
+        strongest_paths.append((i, max([pref_matrix[i.id][j.id] for j in candidates if i != j])))
+    
+    return winner, strongest_paths
+
+# Appeler la méthode dans views.py lors du calcul des résultats
+
+########### IRV(HARE) ############
+
+
+import random
+
+def calculate_voting_rounds(candidates, votes):
+    elimination_rounds = []
+    
+    while len(candidates) > 1:
+        # Initialiser le compteur de votes pour chaque candidat
+        candidate_votes = {candidate.id: 0 for candidate in candidates}
+        
+        # Compter les votes pour les candidats restants
+        for vote in votes:
+            for candidate_id in vote:
+                if candidate_id in candidate_votes:
+                    candidate_votes[candidate_id] += 1
+                    break
+        
+        # Trouver le nombre maximum de votes reçus
+        max_votes = max(candidate_votes.values())
+        # Identifier les candidats ayant reçu le plus de votes
+        top_candidates_ids = [id for id, votes in candidate_votes.items() if votes == max_votes]
+        
+        if len(top_candidates_ids) == 1:
+            # Un seul gagnant, fin du processus
+            winner_id = top_candidates_ids[0]
+            winner = next((c for c in candidates if c.id == winner_id), None)
+            return winner, elimination_rounds + [{'winner': winner.candidate, 'eliminated_candidates': [c.candidate for c in candidates if c.id != winner_id]}]
+        else:
+            # Plusieurs candidats en tête, choisir aléatoirement un vainqueur parmi eux
+            winner_id = random.choice(top_candidates_ids)
+            winner = next((c for c in candidates if c.id == winner_id), None)
+            # Préparer l'élimination pour le tour suivant
+            top_eliminated_candidates = [c for c in candidates if c.id in top_candidates_ids and c.id != winner_id]
+            
+            # Si on ne fait pas l'élimination tout de suite, on ne modifie pas les candidats
+            # On enregistre seulement les candidats qui seront éliminés au prochain tour
+            if top_eliminated_candidates:
+                elimination_rounds.append({'to_be_eliminated_next_round': [c.candidate for c in top_eliminated_candidates]})
+            
+            # Continue avec les candidats restants, y compris le vainqueur actuel
+            candidates = [c for c in candidates if c.id == winner_id or c.id not in top_candidates_ids]
+    
+    # Dernier tour si plus d'un candidat reste
+    if len(candidates) > 1:
+        # Si par hasard il reste plus d'un candidat, choisir aléatoirement parmi eux
+        winner = random.choice(candidates)
+        elimination_rounds.append({'winner': winner.candidate, 'finalists_eliminated': [c.candidate for c in candidates if c != winner]})
+    elif len(candidates) == 1:
+        # S'il reste un seul candidat, il est le vainqueur
+        winner = candidates[0]
+        elimination_rounds.append({'winner': winner.candidate})
+
+    return winner, elimination_rounds

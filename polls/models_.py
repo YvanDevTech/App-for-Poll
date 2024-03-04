@@ -6,6 +6,13 @@ from django.utils.translation import gettext_lazy as _
 from polymorphic.models import PolymorphicModel
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.exceptions import ValidationError
+
+
+
+
+
+
 
 
 class Poll(PolymorphicModel):
@@ -20,13 +27,22 @@ class Poll(PolymorphicModel):
         print(self.closing_date)
         print(date.today())
         return self.closing_date <= date.today()
+    
 
+
+    
 
 class VotingPoll(Poll):
+
+    method = models.CharField(max_length=50, verbose_name=_("Method"))
     PREFERENCE_MODELS = (
         ('Approval', _('Approval Voting (Yes / No)')),
-        ('Ranks#0', _('Simpson')),
-        ('Ranks#2', _('Borda')))
+        ('Ranks#0', _('Simpson voting')),
+        ('Ranks#2', _('Borda voting')),
+        ('Ranks#4', _('Copeland voting')),
+        ('Ranks#6', _('Schulze voting')),
+        ('Ranks#8', _('Hare voting')))
+        
 
     POLL_TYPES = (
         ('Standard', _('Standard Poll')),
@@ -128,6 +144,8 @@ class VotingPoll(Poll):
                     elif vect[j] > vect[i]:
                         matrix[j][i] += 1
         return matrix
+    
+
 
     def __iter__(self, anonymize=False, aggregate=None):
         """Creates an iterator on the poll (serializes the poll as a dictionnary)."""
@@ -151,6 +169,9 @@ class VotingPoll(Poll):
             yield 'matrix', matrix
         else:
             yield 'votes', 'Unknown aggregation method: ' + aggregate
+
+
+
 
 
 class Candidate(PolymorphicModel):
@@ -184,7 +205,24 @@ class VotingScore(models.Model):
         unique_together = ('candidate', 'voter')
         ordering = ['last_modification']
 
+class MyPollAppUserAnonymous(models.Model):
+    nickname = models.CharField(max_length=255)
+    email = models.EmailField(unique=True)
+    certificate = models.CharField(max_length=255)
+    poll = models.ForeignKey(MyPollAppUser, on_delete=models.CASCADE)
 
+
+
+class MyCandidatePreference(models.Model):
+    voter = models.ForeignKey(MyPollAppUserAnonymous, on_delete=models.CASCADE)
+    candidate_name = models.CharField(max_length=255)
+    poll = models.ForeignKey(Candidate, on_delete=models.CASCADE)
+
+
+
+
+
+ 
 #  preference models ########################################################
 UNDEFINED_VALUE = -222222222
 UNDEFINED_TEXT = "?"
